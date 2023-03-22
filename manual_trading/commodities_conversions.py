@@ -34,6 +34,10 @@ class Graph:
                 res.appendleft(highest_idx)
             else:
                 break
+        if res[0] != starting_pos:
+            res.popleft()
+        print(res)
+        print(start_bal)
             
             
         
@@ -48,4 +52,4 @@ trading_list = [
 commodities_name = [["pizza", 0], ["wasabi", 1], ["snowball", 2], ["shells", 3]]
 
 g = Graph(trading_list, commodities_name)
-g.calculate_best_trades(4, 3)
+g.calculate_best_trades(5, 3)
