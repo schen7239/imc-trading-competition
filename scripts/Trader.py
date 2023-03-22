@@ -1,9 +1,8 @@
 from typing import Dict, List
 # FOR SUBMISSION USE
-from datamodel import OrderDepth, TradingState, Order
+# from datamodel import OrderDepth, TradingState, Order
 
-# from ..classes.datamodel import OrderDepth, TradingState, Order
-
+from ..classes.datamodel import OrderDepth, TradingState, Order
 
 class Trader:
 
@@ -26,6 +25,7 @@ class Trader:
                 result[product] = [Order(product, -trade_volume, sell_liquidity)]
             else:
                 result[product] = [Order(product, trade_volume, buy_liquidity)]
+            
             
             
         return result
