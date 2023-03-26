@@ -7,11 +7,12 @@ from datamodel import OrderDepth, TradingState, Order
 class Trader:
 
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
-        # positions = state.position
+        positions = state.position
         result = {}
         for product in state.order_depths.keys():
             if product == "BANANAS" or product == "PEARLS":
-                # position = positions.get(product, 0)
+                position = positions.get(product, 0)
+                print(position)
                 
                 buy_liquidity = min(state.order_depths[product].buy_orders)
                 sell_liquidity = max(state.order_depths[product].sell_orders)
@@ -51,30 +52,30 @@ class Trader:
                         break
                     if consolidated_order_book[i] <= 0:
                         continue
-                    print(f'SELL {consolidated_order_book[i]} at {buy_liquidity + i}')
-                    # orders.append(Order(product, buy_liquidity + i, -consolidated_order_book[i]))
+                    # print(f'SELL {consolidated_order_book[i]} at {buy_liquidity + i}')
+                    orders.append(Order(product, buy_liquidity + i, -consolidated_order_book[i]))
                     volume_sold += consolidated_order_book[i]
                     consolidated_order_book[i] = 0
                 
                 if volume_sold > 0:
-                    print("BUY", volume_sold)
-                    # orders.append(Order(product, buy_liquidity, volume_sold))
+                    # print("BUY", volume_sold)
+                    orders.append(Order(product, buy_liquidity, volume_sold))
                     
                 for i in range(len(consolidated_order_book) - 1):
                     if i == len(consolidated_order_book) - 1:
                         break
                     if consolidated_order_book[i] >= 0:
                         continue
-                    print(f'BUY {consolidated_order_book[i]} at {buy_liquidity + i}')
-                    # orders.append(Order(product, buy_liquidity + i, consolidated_order_book[i]))
+                    # print(f'BUY {consolidated_order_book[i]} at {buy_liquidity + i}')
+                    orders.append(Order(product, buy_liquidity + i, consolidated_order_book[i]))
                     volume_bought += consolidated_order_book[i]
                     consolidated_order_book[i] = 0
                 
                 if volume_bought < 0:
-                    print(f'SELL {volume_bought}',)
-                    # orders.append(Order(product, sell_liquidity, volume_bought))
+                    # print(f'SELL {volume_bought}',)
+                    orders.append(Order(product, sell_liquidity, volume_bought))
                 
-                
+                result[product] = orders
         
             
             
