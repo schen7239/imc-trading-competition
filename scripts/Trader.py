@@ -10,18 +10,13 @@ class Trader:
         positions = state.position
         result = {}
         for product in state.order_depths.keys():
-            if product == "BANANAS" or product == "PEARLS":        
-                
-                
-                
-                # print(state.listings.get(product, 0))
-                # print(state.own_trades.get(product), 0)
-                # print(state.market_trades.get(product), 0)
-                # print(state.observations.get(product), 0)
-                # print("\n\n")
+            if product == "PEARLS":        
                 
                 position = positions.get(product, 0)
                 print(position)
+                
+                print(state.own_trades.get(product))
+                print(state.market_trades.get(product))
                 
                 buy_liquidity = min(state.order_depths[product].buy_orders)
                 sell_liquidity = max(state.order_depths[product].sell_orders)
@@ -73,9 +68,8 @@ class Trader:
                 if volume_bought < 0:
                     # print(f'SELL {volume_bought}')
                     orders.append(Order(product, sell_liquidity, volume_bought))
-                
+                    
                 result[product] = orders
-        
             
             
             
