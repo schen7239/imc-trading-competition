@@ -65,7 +65,6 @@ class Trader:
                         orders.append(Order(product, k, -v))
                         volume_bought += v
                 orders.append(Order(product, vwap, volume_bought + volume_sold))
-                print(volume_bought + volume_sold)
                 result[product] = orders
                 
             
