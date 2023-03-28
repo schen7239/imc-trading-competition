@@ -25,7 +25,6 @@ class Trader:
                 orders: list[Order] = []
                 buy_volume = 0
                 sell_volume = 0
-                print(market_price[product])
                 for k, v in state.order_depths[product].buy_orders.items():
                     if k > market_price[product] and v > 0:
                         orders.append(Order(product, k, -v))
@@ -39,8 +38,6 @@ class Trader:
                 orders.append(Order(product, market_price[product], buy_volume + sell_volume))
                 result[product] = orders
             if product == "BANANAS":
-                print(state.order_depths[product].buy_orders)
-                print(state.order_depths[product].sell_orders)
                 orders: list[Order] = []
                 market_directional_bias = 0
                 directional_delta = 0
