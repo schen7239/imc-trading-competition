@@ -1,4 +1,5 @@
 from typing import Dict, List
+import math
 # FOR SUBMISSION USE
 from datamodel import OrderDepth, TradingState, Order
 
@@ -55,16 +56,20 @@ class Trader:
                 vwap = (sell_liquidity + buy_liquidity) / 2 - directional_delta
                 volume_bought = 0
                 volume_sold = 0
+                vwap_ceiling = math.ceil(vwap)
+                vwap_floor = math.floor(vwap)
                 for k, v in state.order_depths[product].buy_orders.items():
-                 if k > vwap and v > 0:
+                 if k > vwap_ceiling and v > 0:
                         orders.append(Order(product, k, -v))
                         volume_sold += v
-                        
                 for k, v in state.order_depths[product].sell_orders.items():
-                    if k < vwap and v < 0:
+                    if k < vwap_floor and v < 0:
                         orders.append(Order(product, k, -v))
                         volume_bought += v
-                orders.append(Order(product, vwap, volume_bought + volume_sold))
+                if volume_bought + volume_sold > 0:
+                    orders.append(Order(product, vwap_floor, volume_bought + volume_sold))
+                elif volume_bought + volume_sold < 0:
+                    orders.append(Order(product, vwap_ceiling, volume_bought + volume_sold))
                 result[product] = orders
                 
             
