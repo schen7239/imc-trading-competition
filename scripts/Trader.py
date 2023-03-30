@@ -26,15 +26,25 @@ def calculate_bias_to_trading_position(state, directional_bias, trade_type):
         return directional_bias
     elif trade_type == "BUY":
         return directional_bias * 5/(math.log(state.timestamp / 100))
-    elif state.timestamp == 40000 or state.timestamp == 40100:
+    elif state.timestamp == 40000 or state.timestamp == 40100 and trade_type == "SELL":
         return directional_bias
-    return directional_bias * 5/(math.log((state.timestamp - 40000) / 100))
+    elif trade_type == "SELL":
+        return directional_bias * 5/(math.log((state.timestamp / 100 - 40)))
+    return 0
          
+def calculate_trading_position_for_price_trending_assets(vwap, price, max_volume, vol_range):
+    calc_prob = abs(price - vwap) / vol_range
+    # logit function - buy more volume as the price deviates more from the market price
+    return math.ceil(max_volume * 0.02 * abs(math.log(calc_prob / (1 - calc_prob))))
 
 class Trader:
     
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
         result = {}
+        basket_item_price = {
+            
+        }
+        basket_price = 0
         market_price = {
             "BANANAS": 5000,
             "PEARLS": 10000,
@@ -51,7 +61,13 @@ class Trader:
             "BANANAS": 20,
             "PEARLS": 20,
             "BERRIES": 250,
-            "DIVING_GEAR": 50
+            "DIVING_GEAR": 50,
+            "COCONUTS": 600,
+            "PINA_COLADAS": 300,
+            "BAGUETTE": 150,
+            "DIP": 300,
+            "UKULELE": 70,
+            "PICNIC_BASKET": 70
         }
         for product in state.order_depths.keys():
             if product == "PEARLS":
@@ -101,9 +117,33 @@ class Trader:
                     orders.append(Order(product, vwap_ceiling, volume_bought + volume_sold))
                 result[product] = orders
             elif product == "COCONUTS":
-                # print(state.order_depths[product].buy_orders)
-                # print(state.order_depths[product].sell_orders)
+                holding = state.position.get(product, 0)
+                orders: list[Order] = []
+                buy_volume, sell_volume, buy_liquidity, sell_liquidity, total_volume, directional_delta, vwap = calculate_vwap(state, product)
+                
+                if market_price[product] - vwap < -200:
+                    orders.append(Order(product, vwap, -calculate_trading_position_for_price_trending_assets(vwap, market_price[product], max_position_size[product], 120)))
+                elif market_price[product] - vwap < -50:
+                    orders.append(Order(product, vwap, calculate_trading_position_for_price_trending_assets(vwap, market_price[product], max_position_size[product], 120)))
+                elif market_price[product] - vwap < 50:
+                    orders.append(Order(product, vwap, -calculate_trading_position_for_price_trending_assets(vwap, market_price[product], max_position_size[product], 120)))
+                elif market_price[product] - vwap < 200:
+                    orders.append(Order(product, vwap, calculate_trading_position_for_price_trending_assets(vwap, market_price[product], max_position_size[product], 120)))
+                result[product] = orders
                 pass
+            elif product == "PINA_COLADAS":
+                holding = state.position.get(product, 0)
+                orders: list[Order] = []
+                buy_volume, sell_volume, buy_liquidity, sell_liquidity, total_volume, directional_delta, vwap = calculate_vwap(state, product)
+                if market_price[product] - vwap < -200:
+                    orders.append(Order(product, vwap, -calculate_trading_position_for_price_trending_assets(vwap, market_price[product], max_position_size[product], 200)))
+                elif market_price[product] - vwap < -50:
+                    orders.append(Order(product, vwap, calculate_trading_position_for_price_trending_assets(vwap, market_price[product], max_position_size[product], 200)))
+                elif market_price[product] - vwap < 50:
+                    orders.append(Order(product, vwap, -calculate_trading_position_for_price_trending_assets(vwap, market_price[product], max_position_size[product], 200)))
+                elif market_price[product] - vwap < 200:
+                    orders.append(Order(product, vwap, calculate_trading_position_for_price_trending_assets(vwap, market_price[product], max_position_size[product], 200)))
+                result[product] = orders
             elif product == "BERRIES":
                 orders: list[Order] = []
                 holding = state.position.get(product, 0)
@@ -122,11 +162,9 @@ class Trader:
                             orders.append(Order(product, k, -v))
                 result[product] = orders
             elif product == "DIVING_GEAR":
-                # every 40000
                 orders: list[Order] = []
                 holding = state.position.get(product, 0)
                 buy_volume, sell_volume, buy_liquidity, sell_liquidity, total_volume, directional_delta, vwap = calculate_vwap(state, product)
-                print(holding)
                 if state.timestamp < 35000:
                     for k, v in state.order_depths[product].sell_orders.items():
                         if k < vwap + calculate_bias_to_trading_position(state, directional_delta, "BUY") and v < 0:
@@ -140,8 +178,41 @@ class Trader:
                         if k < (buy_liquidity + sell_liquidity) / 2 and v < 0:
                             orders.append(Order(product, k, -v))
                 result[product] = orders
-                     
-                    
-                     
+            elif product == "BAGUETTE":
+                buy_volume, sell_volume, buy_liquidity, sell_liquidity, total_volume, directional_delta, vwap = calculate_vwap(state, product)
+                basket_item_price[product] = vwap
+            elif product == "PICNIC_BASKET":
+                buy_volume, sell_volume, buy_liquidity, sell_liquidity, total_volume, directional_delta, vwap = calculate_vwap(state, product)
+                basket_price = vwap
+            elif product == "DIP":
+                buy_volume, sell_volume, buy_liquidity, sell_liquidity, total_volume, directional_delta, vwap = calculate_vwap(state, product)
+                basket_item_price[product] = vwap
+            elif product == "UKULELE":
+                buy_volume, sell_volume, buy_liquidity, sell_liquidity, total_volume, directional_delta, vwap = calculate_vwap(state, product)
+                basket_item_price[product] = vwap
+        # one picnic basket has 2 baguettes, 4 dips, and 1 ukelele
+        # you can trade the price discrepancy between the finished product and the items that make up the picnic basket
+        total_item_price = sum(basket_item_price.values())
             
+        bag_order = []
+        dip_order = []
+        picnic_order = []
+        uke_order = []
+            
+        if basket_price - total_item_price > 10:
+            bag_order.append(Order("BAGUETTE", basket_item_price["BAGUETTE"], 2))
+            dip_order.append(Order("DIP", basket_item_price["DIP"], 4))
+            picnic_order.append(Order("PICNIC_BASKET", basket_price, -1))
+            uke_order.append(Order("UKULELE", basket_item_price["UKULELE"], 1))
+        elif basket_price - total_item_price < -10:
+            bag_order.append(Order("BAGUETTE", basket_item_price["BAGUETTE"], -2))
+            dip_order.append(Order("DIP", basket_item_price["DIP"], -4))
+            picnic_order.append(Order("PICNIC_BASKET", basket_price, 1))
+            uke_order.append(Order("UKULELE", basket_item_price["UKULELE"], -1))
+            
+        result["BAGUETTE"] = bag_order
+        result["DIP"] = dip_order
+        result["PICNIC_BASKET"] = picnic_order
+        result["UKELELE"] = uke_order
+                
         return result
